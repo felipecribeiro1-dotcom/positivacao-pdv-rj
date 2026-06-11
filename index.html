@@ -519,5 +519,67 @@ document.getElementById('p-inicio').value = amanha.toISOString().split('T')[0];
 redesPadrao.forEach(r => addRede(r.nome, r.lojas));
 calc();
 </script>
+
+<!-- Firebase: salvar e carregar roteiros -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyCzsxWEMa2qy3_WcV9jVQLR97Iwe2D9A7Q",authDomain:"painel-pdv-quality.firebaseapp.com",projectId:"painel-pdv-quality",storageBucket:"painel-pdv-quality.firebasestorage.app",messagingSenderId:"1075785754630",appId:"1:1075785754630:web:e7301ed75ff44da800bb87"});
+const db = firebase.firestore();
+const roteirosRef = db.collection('roteiros');
+
+// Botões de salvar/carregar no topbar
+document.querySelector('.bar-right').insertAdjacentHTML('afterbegin', `
+  <select id="fbSelect" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,.7);cursor:pointer;max-width:160px">
+    <option value="">📂 Carregar roteiro...</option>
+  </select>
+  <button onclick="fbSalvar()" style="background:var(--gold);border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-family:'DM Sans',sans-serif;color:#0D1B2A;font-weight:700;cursor:pointer">💾 Salvar</button>
+`);
+
+// Carregar lista de roteiros
+roteirosRef.orderBy('criado_em','desc').onSnapshot(snap => {
+  const sel = document.getElementById('fbSelect');
+  sel.innerHTML = '<option value="">📂 Carregar roteiro...</option>';
+  snap.forEach(doc => {
+    const opt = document.createElement('option');
+    opt.value = doc.id;
+    opt.textContent = doc.data().nome;
+    sel.appendChild(opt);
+  });
+});
+
+document.getElementById('fbSelect').addEventListener('change', function() {
+  if (!this.value) return;
+  roteirosRef.doc(this.value).get().then(doc => {
+    if (!doc.exists) return;
+    const d = doc.data().dados;
+    // Restaurar campos
+    ['p-produto','p-cliente','p-resp','p-inicio','p-pessoas','p-diaria','p-combustivel','p-supervisor','p-outros','p-cobertura','p-faturamento'].forEach(id => {
+      const el = document.getElementById(id); if (el && d[id] !== undefined) el.value = d[id];
+    });
+    // Restaurar redes
+    document.getElementById('redesList').innerHTML = '';
+    (d.redes || []).forEach(r => addRede(r.nome, r.lojas));
+    calc();
+  });
+  this.value = '';
+});
+
+function fbSalvar() {
+  const nome = prompt('Nome do roteiro:');
+  if (!nome) return;
+  const dados = {};
+  ['p-produto','p-cliente','p-resp','p-inicio','p-pessoas','p-diaria','p-combustivel','p-supervisor','p-outros','p-cobertura','p-faturamento'].forEach(id => {
+    const el = document.getElementById(id); if (el) dados[id] = el.value;
+  });
+  dados.redes = [];
+  document.querySelectorAll('#redesList .rede-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[0]) dados.redes.push({ nome: inputs[0].value, lojas: inputs[1]?.value || 0 });
+  });
+  roteirosRef.add({ nome, dados, criado_em: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => alert('✅ Roteiro "' + nome + '" salvo!'));
+}
+</script>
 </body>
 </html>
