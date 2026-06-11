@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>PDV Quality — Positivação RJ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -265,7 +266,24 @@ table.lt tr:nth-child(even) td{background:#FAFAF8}
   <span class="hdr-tag">Positivação PDV · RJ · 516 lojas</span>
   <div class="hdr-r">
     <button class="hb" onclick="window.print()">🖨 Imprimir</button>
-    <button class="hb gold" onclick="exportCSV()">📊 Exportar CSV</button>
+    <div style="position:relative;display:inline-block" id="exp-wrap">
+    <button class="hb gold" onclick="toggleExpMenu()">📊 Exportar ▾</button>
+    <div id="exp-menu" style="display:none;position:absolute;right:0;top:110%;background:white;border:1.5px solid var(--fog);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;min-width:200px;overflow:hidden">
+      <div onclick="exportExcel('roteiros')" style="padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink);border-bottom:1px solid var(--fog);display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--smoke)'" onmouseout="this.style.background=''">
+        📋 Roteiro completo (Excel)
+      </div>
+      <div onclick="exportExcel('lojas')" style="padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink);border-bottom:1px solid var(--fog);display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--smoke)'" onmouseout="this.style.background=''">
+        🏪 Lista de lojas (Excel)
+      </div>
+      <div onclick="exportExcel('resumo')" style="padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink);border-bottom:1px solid var(--fog);display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--smoke)'" onmouseout="this.style.background=''">
+        📊 Resumo financeiro (Excel)
+      </div>
+      <div onclick="exportExcel('tudo')" style="padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--smoke)'" onmouseout="this.style.background=''">
+        📁 Tudo em um arquivo (Excel)
+      </div>
+
+    </div>
+  </div>
   </div>
 </div>
 
@@ -1022,6 +1040,175 @@ function removerGrupo(id) {
 // Override calcAll para respeitar ativo/inativo e grupos
 const _calcRegOrig = calcReg;
 
+
+// ── EXPORT MENU ──
+function toggleExpMenu() {
+  const m = g('exp-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+  if (m.style.display === 'block') {
+    setTimeout(() => document.addEventListener('click', function h(e) {
+      if (!g('exp-wrap').contains(e.target)) { m.style.display='none'; document.removeEventListener('click',h); }
+    }), 0);
+  }
+}
+
+// ── EXPORT EXCEL ──
+function exportExcel(tipo) {
+  g('exp-menu').style.display = 'none';
+  const wb = XLSX.utils.book_new();
+  const horas = parseFloat(g('g-h').value)||8;
+  const valor = parseFloat(g('g-val').value)||0;
+  const ini   = g('g-ini').value;
+  const sab   = g('g-sab').value === '1';
+
+  if (tipo === 'roteiros' || tipo === 'tudo') {
+    // Uma aba por região
+    DATA.regioes.forEach(reg => {
+      const planR = planRegs.find(r => r.nome === reg.nome);
+      if (planR && planR.ativo === false) return;
+      const state = rotState[reg.nome] || reg.promotores;
+      const rows = [];
+
+      // Cabeçalho da região
+      rows.push([reg.nome.toUpperCase(), '', '', '', '', '', '']);
+      rows.push(['Lojas:', reg.lojas, 'Pessoas:', state.length, 'LPD:', reg.lpd, '']);
+      rows.push(['']);
+
+      state.forEach(prom => {
+        rows.push([`PROMOTOR ${prom.label}`, `${prom.roteiro.reduce((a,d)=>a+d.lojas.length,0)} lojas`, `${prom.roteiro.length} dias`, '', '', '', '']);
+        rows.push(['Dia', 'Cidades / Bairros', 'Bandeira', 'Bairro/Cidade', 'Endereço', 'Perfil', 'Observação']);
+
+        // Calcular data de cada dia
+        let dtAtual = ini ? new Date(ini + 'T12:00:00') : null;
+        let diaCount = 0;
+
+        prom.roteiro.forEach(dia => {
+          // Avançar para próximo dia útil
+          let dtLabel = '';
+          if (dtAtual) {
+            while (true) {
+              const dw = dtAtual.getDay();
+              if (dw !== 0 && (sab || dw !== 6)) { diaCount++; break; }
+              dtAtual.setDate(dtAtual.getDate() + 1);
+            }
+            dtLabel = dtAtual.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', weekday:'short'});
+            dtAtual.setDate(dtAtual.getDate() + 1);
+          }
+
+          dia.lojas.forEach((loja, li) => {
+            rows.push([
+              li === 0 ? `Dia ${dia.dia}${dtLabel ? ' — '+dtLabel : ''}` : '',
+              li === 0 ? dia.cidades.join(' → ') : '',
+              loja.bandeira || '',
+              loja.bairro || '',
+              loja.endereco || '',
+              loja.perfil || '',
+              ''
+            ]);
+          });
+          rows.push(['']); // espaço entre dias
+        });
+        rows.push(['', '', '', '', '', '', '']); // espaço entre promotores
+      });
+
+      // Nome da aba: máx 31 chars, sem chars especiais
+      const abaNome = reg.nome.replace(/[/\\?*[\]:]/g, '-').substring(0, 31);
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Larguras das colunas
+      ws['!cols'] = [
+        {wch: 22}, {wch: 30}, {wch: 25}, {wch: 22}, {wch: 35}, {wch: 8}, {wch: 15}
+      ];
+
+      // Estilo cabeçalho (negrito via merge)
+      XLSX.utils.book_append_sheet(wb, ws, abaNome);
+    });
+  }
+
+  if (tipo === 'lojas' || tipo === 'tudo') {
+    const hdrs = ['Bandeira', 'Cidade/Bairro', 'Município', 'Endereço', 'CEP', 'CNPJ', 'Região', 'Perfil', 'Custo/Loja (R$)', 'Receita/Loja (R$)', 'Promotor', 'Dia'];
+    
+    // Mapear loja -> promotor e dia
+    const lojaMap = {};
+    DATA.regioes.forEach(reg => {
+      const state = rotState[reg.nome] || reg.promotores;
+      state.forEach(prom => {
+        prom.roteiro.forEach(dia => {
+          dia.lojas.forEach(loja => {
+            const key = (loja.bandeira||'') + '|' + (loja.endereco||'');
+            lojaMap[key] = { promotor: 'Promotor ' + prom.label, dia: 'Dia ' + dia.dia };
+          });
+        });
+      });
+    });
+
+    const rows = [hdrs];
+    DATA.lojas.forEach(l => {
+      const planR = planRegs.find(r => r.nome === l.regiao);
+      const custo = planR ? planR.custoLoja : 90;
+      const key = (l.bandeira||'') + '|' + (l.endereco||'');
+      const mp = lojaMap[key] || {};
+      rows.push([
+        l.bandeira||'', l.cidade_display||'', l.municipio||'',
+        l.endereco||'', l.cep||'', l.cnpj||'',
+        l.regiao||'', l.perfil||'',
+        custo, valor,
+        mp.promotor||'', mp.dia||''
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:25},{wch:20},{wch:20},{wch:35},{wch:12},{wch:16},{wch:28},{wch:6},{wch:12},{wch:12},{wch:14},{wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Lista de Lojas');
+  }
+
+  if (tipo === 'resumo' || tipo === 'tudo') {
+    const rows = [
+      ['RESUMO OPERACIONAL E FINANCEIRO'],
+      [''],
+      ['Região', 'Lojas', 'Pessoas', 'Lojas/dia', 'Dias', 'Custo variável (R$)', 'Custo fixo (R$)', 'Custo total (R$)', 'Faturamento (R$)', 'Margem (R$)', 'Margem (%)']
+    ];
+    let tL=0, tP=0, tCV=0, tCF=0, tFat=0, maxD=0;
+    planRegs.forEach(r => {
+      if (r.ativo === false) return;
+      const c = calcReg(r, horas, valor);
+      rows.push([r.nome, r.lojas, r.pessoas, c.ldt, c.dias,
+        c.cv.toFixed(2), c.cf.toFixed(2), c.ct.toFixed(2),
+        c.fat.toFixed(2), c.marg.toFixed(2), c.margPct.toFixed(1)+'%']);
+      tL+=r.lojas; tP+=r.pessoas; tCV+=c.cv; tCF+=c.cf; tFat+=c.fat; maxD=Math.max(maxD,c.dias);
+    });
+    const tC=tCV+tCF, tM=tFat-tC, tMp=tFat>0?tM/tFat*100:0;
+    rows.push(['TOTAL', tL, tP, '', maxD,
+      tCV.toFixed(2), tCF.toFixed(2), tC.toFixed(2),
+      tFat.toFixed(2), tM.toFixed(2), tMp.toFixed(1)+'%']);
+    rows.push(['']);
+
+    // Resumo por promotor
+    rows.push(['DISTRIBUIÇÃO POR PROMOTOR']);
+    rows.push(['Região', 'Promotor', 'Total lojas', 'Total dias', 'Cidades cobertas']);
+    DATA.regioes.forEach(reg => {
+      const planR = planRegs.find(r => r.nome === reg.nome);
+      if (planR && planR.ativo === false) return;
+      const state = rotState[reg.nome] || reg.promotores;
+      state.forEach(p => {
+        const cidades = [...new Set(p.roteiro.flatMap(d => d.cidades))].join(', ');
+        rows.push([reg.nome, 'Promotor '+p.label,
+          p.roteiro.reduce((a,d)=>a+d.lojas.length,0),
+          p.roteiro.length, cidades]);
+      });
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:35},{wch:12},{wch:10},{wch:8},{wch:10},{wch:18},{wch:14},{wch:16},{wch:16},{wch:14},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Resumo');
+  }
+
+  if (XLSX.utils.book_get_sheet_names(wb).length === 0) return;
+
+  const fname = 'Positivacao_PDV_RJ_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
 // ── LISTA LOJAS ──
 function fReg(r,btn){fRegAtiva=r;document.querySelectorAll('.lfb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderLojas();}
 function fBusca(v){fBuscaStr=v.toLowerCase().trim();renderLojas();}
@@ -1085,7 +1272,8 @@ DATA.regioes.forEach(r=>addPlanReg({
 }));
 renderLojas();
 </script>
-
+</body>
+</html>
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
@@ -1094,7 +1282,6 @@ firebase.initializeApp({apiKey:"AIzaSyCzsxWEMa2qy3_WcV9jVQLR97Iwe2D9A7Q",authDom
 const _db=firebase.firestore();
 const _rotRef=_db.collection('roteiros');
 
-// Botões no header
 document.querySelector('.hdr-r').insertAdjacentHTML('afterbegin',`
   <select id="fbSel" class="hb" style="max-width:155px;cursor:pointer">
     <option value="">📂 Carregar roteiro...</option>
@@ -1102,7 +1289,6 @@ document.querySelector('.hdr-r').insertAdjacentHTML('afterbegin',`
   <button class="hb gold" onclick="fbSalvar()">💾 Salvar</button>
 `);
 
-// Lista em tempo real
 _rotRef.orderBy('criado_em','desc').onSnapshot(snap=>{
   const sel=document.getElementById('fbSel');
   sel.innerHTML='<option value="">📂 Carregar roteiro...</option>';
@@ -1136,5 +1322,3 @@ function fbSalvar(){
     .catch(e=>alert('Erro: '+e.message));
 }
 </script>
-</body>
-</html>
