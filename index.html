@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PDV Quality — Calculadora de Positivação</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B2A;--navy2:#162236;--blue:#1B4F8A;
+  --gold:#C9A84C;--gold2:#E8C97A;
+  --white:#FFFFFF;--bg:#F0F3F8;--surface:#FFFFFF;
+  --border:#DDE3EE;--text:#1E293B;--muted:#64748B;--faint:#94A3B8;
+  --green:#1A7A4A;--green-bg:#DCFCE7;
+  --amber:#B45309;--amber-bg:#FEF3C7;
+  --red:#DC2626;--red-bg:#FEE2E2;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* TOPBAR */
+.bar{background:var(--navy);height:54px;display:flex;align-items:center;padding:0 28px;gap:12px;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:100}
+.bar-logo{display:flex;align-items:center;gap:8px}
+.bar-logo img{height:22px;object-fit:contain}
+.bar-tag{font-size:10px;color:var(--gold);font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-left:1px solid rgba(255,255,255,.2);padding-left:10px}
+.bar-right{margin-left:auto;display:flex;gap:8px}
+.btn-print{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:6px 12px;font-size:12px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,.6);cursor:pointer}
+.btn-print:hover{background:rgba(255,255,255,.15);color:white}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 70%);padding:28px 28px 0}
+.hero-title{font-family:'DM Serif Display',serif;font-size:28px;color:var(--white);margin-bottom:4px}
+.hero-title em{color:var(--gold);font-style:italic}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:20px}
+.hero-pills{display:flex;gap:10px;padding-bottom:24px;flex-wrap:wrap}
+.pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 16px}
+.pill-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--gold)}
+.pill-val.green{color:#4ADE80}
+.pill-val.red{color:#F87171}
+.pill-label{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px}
+
+/* CONTENT */
+.content{max-width:1000px;margin:0 auto;padding:24px 20px 80px}
+
+/* SEÇÃO */
+.sec-title{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* CARDS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+
+/* INPUTS */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.field input,.field select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:var(--gold);background:white}
+.field-hint{font-size:10px;color:var(--faint);margin-top:3px}
+.field input[readonly]{color:var(--green);font-weight:600;cursor:default;background:var(--green-bg);border-color:transparent}
+.field input.warn{color:var(--amber);background:var(--amber-bg)}
+.field input.danger{color:var(--red);background:var(--red-bg)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* REDES */
+.redes-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.rede-row{display:grid;grid-template-columns:1fr 100px 36px;gap:8px;align-items:center}
+.rede-row input{padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none}
+.rede-row input:focus{border-color:var(--gold);background:white}
+.rede-row input[type=number]{font-family:'DM Mono',monospace;text-align:right}
+.btn-rm{background:none;border:1.5px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;color:var(--faint);font-size:14px;display:flex;align-items:center;justify-content:center}
+.btn-rm:hover{border-color:var(--red);color:var(--red)}
+.btn-add{width:100%;padding:8px;border:2px dashed var(--border);border-radius:8px;background:transparent;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--muted);cursor:pointer;margin-bottom:12px}
+.btn-add:hover{border-color:var(--blue);color:var(--blue)}
+
+/* RESULTADO */
+.resultado{background:var(--navy);border-radius:14px;padding:24px;margin-bottom:14px}
+.resultado::before{content:'';display:block;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px 3px 0 0;margin:-24px -24px 20px}
+.res-title{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
+.res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.res-item{padding:14px;background:rgba(255,255,255,.05);border-radius:9px;border:1px solid rgba(255,255,255,.07)}
+.res-val{font-family:'DM Serif Display',serif;font-size:28px;color:var(--white);line-height:1;margin-bottom:4px}
+.res-val.gold{color:var(--gold)}
+.res-val.green{color:#4ADE80}
+.res-label{font-size:10px;color:rgba(255,255,255,.35)}
+
+/* CRONOGRAMA */
+.crono-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.crono-day{background:rgba(255,255,255,.05);border-radius:8px;padding:10px 6px;text-align:center;border:1px solid rgba(255,255,255,.07)}
+.crono-day.done{background:rgba(26,122,74,.3);border-color:rgba(74,222,128,.3)}
+.crono-day.today{background:rgba(201,168,76,.2);border-color:var(--gold)}
+.crono-day-num{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:4px}
+.crono-day-val{font-family:'DM Serif Display',serif;font-size:18px;color:var(--white)}
+.crono-day-label{font-size:9px;color:rgba(255,255,255,.3);margin-top:2px}
+
+/* TABELA CUSTO */
+.cost-table{width:100%;border-collapse:collapse}
+.cost-table th{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;padding:7px 12px;border-bottom:1px solid var(--border);text-align:left;background:var(--bg)}
+.cost-table td{font-size:13px;color:var(--text);padding:9px 12px;border-bottom:1px solid var(--border)}
+.cost-table tr:last-child td{border-bottom:none;font-weight:700;color:var(--navy)}
+.cost-table td:last-child{text-align:right;font-family:'DM Mono',monospace;font-weight:600}
+.cost-table tr.total{background:var(--bg)}
+.cost-table tr.subtotal td{color:var(--muted);font-size:12px}
+
+/* ALERTA */
+.alerta{background:var(--amber-bg);border:1px solid var(--amber-border,#FCD34D);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--amber);margin-bottom:12px;display:none}
+.alerta.show{display:block}
+
+@media print{
+  .bar,.btn-print{display:none}
+  .content{padding:16px}
+  .hero{background:var(--navy)!important}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-logo">
+    <img src="https://pdvquality.com/wp-content/uploads/2025/10/PDVQ-Branco-1-1024x353.png" alt="PDV Quality" onerror="this.style.display='none'">
+    <span class="bar-tag">Calculadora de Positivação</span>
+  </div>
+  <div class="bar-right">
+    <button class="btn-print" onclick="window.print()">🖨 Imprimir</button>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-title">Positivação de Materiais PDV — <em>RJ</em></div>
+  <div class="hero-sub">Wobbler · Faixa de gôndola · Materiais pequenos · Equipe motorizada</div>
+  <div class="hero-pills">
+    <div class="pill"><div class="pill-val" id="h-lojas">500</div><div class="pill-label">Total de lojas</div></div>
+    <div class="pill"><div class="pill-val" id="h-pessoas">—</div><div class="pill-label">Pessoas necessárias</div></div>
+    <div class="pill"><div class="pill-val green" id="h-dias">—</div><div class="pill-label">Dias para concluir</div></div>
+    <div class="pill"><div class="pill-val" id="h-faturamento">—</div><div class="pill-label">Faturamento total</div></div>
+    <div class="pill"><div class="pill-val gold" id="h-margem">—</div><div class="pill-label">Margem bruta</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- REDES -->
+  <div class="sec-title">🏪 Redes e quantidade de lojas</div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">Distribuição por rede</div>
+    <div style="display:grid;grid-template-columns:1fr 100px 36px;gap:8px;margin-bottom:6px">
+      <div style="font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">Rede</div>
+      <div style="font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;text-align:right">Lojas</div>
+      <div></div>
+    </div>
+    <div class="redes-list" id="redesList"></div>
+    <button class="btn-add" onclick="addRede()">+ Adicionar rede</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border)">
+      <span style="font-size:12px;font-weight:700;color:var(--text)">Total de lojas</span>
+      <span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:var(--navy)" id="totalLojas">0</span>
+    </div>
+  </div>
+
+  <!-- PARÂMETROS OPERACIONAIS -->
+  <div class="sec-title">⚙️ Parâmetros operacionais</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">⏱ Tempo e jornada</div>
+      <div class="field">
+        <label>Tempo por loja (minutos)</label>
+        <input type="number" id="p-tmpLoja" value="30" min="5" max="480" oninput="calc()">
+        <div class="field-hint">Incluindo positivação do material</div>
+      </div>
+      <div class="field">
+        <label>Deslocamento médio entre lojas (minutos)</label>
+        <input type="number" id="p-tmpDeslocamento" value="20" min="5" max="120" oninput="calc()">
+        <div class="field-hint">Estimativa com moto, tráfego médio RJ</div>
+      </div>
+      <div class="field">
+        <label>Horas de trabalho por dia</label>
+        <input type="number" id="p-horas" value="8" min="4" max="12" oninput="calc()">
+        <div class="field-hint">Jornada efetiva descontando almoço</div>
+      </div>
+      <div class="field">
+        <label>Lojas por pessoa por dia (calculado)</label>
+        <input type="number" id="p-lojasDia" readonly>
+        <div class="field-hint">Baseado no tempo por loja + deslocamento</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👥 Equipe</div>
+      <div class="field">
+        <label>Número de pessoas na equipe</label>
+        <input type="number" id="p-pessoas" value="10" min="1" max="200" oninput="calc()">
+        <div class="field-hint">Pessoas motorizadas em campo</div>
+      </div>
+      <div class="field">
+        <label>Data de início</label>
+        <input type="date" id="p-inicio" oninput="calc()">
+        <div class="field-hint">A partir de amanhã</div>
+      </div>
+      <div class="field">
+        <label>Trabalha aos sábados?</label>
+        <select id="p-sabado" onchange="calc()">
+          <option value="1">Sim</option>
+          <option value="0">Não</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Dias necessários (calculado)</label>
+        <input type="number" id="p-diasNec" readonly>
+        <div class="field-hint">Dias corridos úteis para concluir</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOS -->
+  <div class="sec-title">💰 Custos e faturamento</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">📊 Modelo de custo por pessoa/dia</div>
+      <div class="field">
+        <label>Diária por pessoa (R$)</label>
+        <input type="number" id="c-diaria" value="150" min="0" step="10" oninput="calc()">
+        <div class="field-hint">Inclui transporte próprio (moto)</div>
+      </div>
+      <div class="field">
+        <label>Ajuda de custo / combustível por pessoa/dia (R$)</label>
+        <input type="number" id="c-combustivel" value="40" min="0" step="5" oninput="calc()">
+      </div>
+      <div class="field">
+        <label>Supervisor (R$ total)</label>
+        <input type="number" id="c-supervisor" value="500" min="0" step="50" oninput="calc()">
+        <div class="field-hint">Custo total do supervisor pela ação</div>
+      </div>
+      <div class="field">
+        <label>Material de suporte / outros (R$)</label>
+        <input type="number" id="c-outros" value="300" min="0" step="50" oninput="calc()">
+        <div class="field-hint">Fitas, cola, ferramentas, etc.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💵 Faturamento ao cliente</div>
+      <div class="field">
+        <label>Valor cobrado por loja positivada (R$)</label>
+        <input type="number" id="c-valorLoja" value="150" min="0" step="10" oninput="calc()">
+        <div class="field-hint">Média estimada — ajuste conforme proposta</div>
+      </div>
+      <div class="field">
+        <label>Faturamento total (calculado)</label>
+        <input type="number" id="c-faturamento" readonly>
+      </div>
+      <div class="field">
+        <label>Custo total da operação (calculado)</label>
+        <input type="number" id="c-custoTotal" readonly class="warn">
+      </div>
+      <div class="field">
+        <label>Margem bruta (calculado)</label>
+        <input type="number" id="c-margem" readonly>
+      </div>
+    </div>
+  </div>
+
+  <div class="alerta" id="alertaDias">
+    ⚠️ Com essa equipe, a ação levará mais de <span id="alertaDiasN">0</span> dias úteis. Considere aumentar o número de pessoas para concluir mais rápido.
+  </div>
+  <div class="alerta" id="alertaMargem" style="background:var(--red-bg);border-color:#FCA5A5;color:var(--red)">
+    ⛔ Margem negativa — o custo da operação supera o faturamento. Revise o valor por loja ou reduza os custos.
+  </div>
+
+  <!-- RESULTADO PRINCIPAL -->
+  <div class="resultado">
+    <div class="res-title">📋 Resumo da operação</div>
+    <div class="res-grid">
+      <div class="res-item">
+        <div class="res-val" id="r-lojas">500</div>
+        <div class="res-label">Lojas a positivar</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-pessoas">—</div>
+        <div class="res-label">Pessoas em campo</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val gold" id="r-diasUtil">—</div>
+        <div class="res-label">Dias úteis</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-conclusao">—</div>
+        <div class="res-label">Conclusão prevista</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-lojasDia">—</div>
+        <div class="res-label">Lojas/pessoa/dia</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-totalDia">—</div>
+        <div class="res-label">Lojas/dia (equipe)</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val green" id="r-faturamento">—</div>
+        <div class="res-label">Faturamento</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val gold" id="r-margem">—</div>
+        <div class="res-label">Margem bruta</div>
+      </div>
+    </div>
+
+    <!-- CRONOGRAMA VISUAL -->
+    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Cronograma de execução</div>
+    <div class="crono-grid" id="crono"></div>
+  </div>
+
+  <!-- TABELA DE CUSTOS -->
+  <div class="card">
+    <div class="card-title">📑 Composição de custos da operação</div>
+    <table class="cost-table">
+      <thead>
+        <tr><th>Item</th><th>Qtd</th><th>Unit (R$)</th><th>Total (R$)</th></tr>
+      </thead>
+      <tbody id="costBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// Redes padrão
+const redesPadrao = [
+  {nome:'Redeconomia',lojas:140},
+  {nome:'Vianense',lojas:19},
+  {nome:'Outras redes menores RJ',lojas:341},
+];
+
+function addRede(nome='', lojas=0) {
+  const list = document.getElementById('redesList');
+  const row = document.createElement('div');
+  row.className = 'rede-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Nome da rede" value="${nome}" oninput="calcTotal()">
+    <input type="number" placeholder="0" value="${lojas||''}" min="0" oninput="calcTotal()">
+    <button class="btn-rm" onclick="this.parentElement.remove();calcTotal()">✕</button>
+  `;
+  list.appendChild(row);
+  calcTotal();
+}
+
+function calcTotal() {
+  const rows = document.getElementById('redesList').querySelectorAll('.rede-row');
+  let total = 0;
+  rows.forEach(r => {
+    const v = parseInt(r.querySelectorAll('input')[1].value) || 0;
+    total += v;
+  });
+  document.getElementById('totalLojas').textContent = total.toLocaleString('pt-BR');
+  calc();
+}
+
+function fmt(n) { return 'R$ ' + parseFloat(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtN(n) { return parseFloat(n||0).toLocaleString('pt-BR'); }
+
+function calc() {
+  // Inputs
+  const totalLojas       = parseInt(document.getElementById('totalLojas').textContent.replace(/\D/g,''))||0;
+  const tmpLoja          = parseFloat(document.getElementById('p-tmpLoja').value)||30;
+  const tmpDeslocamento  = parseFloat(document.getElementById('p-tmpDeslocamento').value)||20;
+  const horasDia         = parseFloat(document.getElementById('p-horas').value)||8;
+  const pessoas          = parseInt(document.getElementById('p-pessoas').value)||1;
+  const sabado           = document.getElementById('p-sabado').value === '1';
+  const inicioStr        = document.getElementById('p-inicio').value;
+  const diaria           = parseFloat(document.getElementById('c-diaria').value)||0;
+  const combustivel      = parseFloat(document.getElementById('c-combustivel').value)||0;
+  const supervisor       = parseFloat(document.getElementById('c-supervisor').value)||0;
+  const outros           = parseFloat(document.getElementById('c-outros').value)||0;
+  const valorLoja        = parseFloat(document.getElementById('c-valorLoja').value)||0;
+
+  // Cálculos operacionais
+  const minutosDia       = horasDia * 60;
+  const tempoPorLoja     = tmpLoja + tmpDeslocamento;
+  const lojasPessoaDia   = Math.floor(minutosDia / tempoPorLoja);
+  const lojasDiaTotais   = lojasPessoaDia * pessoas;
+  const diasNecessarios  = lojasDiaTotais > 0 ? Math.ceil(totalLojas / lojasDiaTotais) : 0;
+
+  // Data de conclusão
+  let conclusao = '—';
+  let diasUteis = diasNecessarios;
+  let dataFim = null;
+  if (inicioStr) {
+    let d = new Date(inicioStr + 'T00:00:00');
+    let contagem = 0;
+    let tentativas = 0;
+    while (contagem < diasNecessarios && tentativas < 365) {
+      const dow = d.getDay();
+      const ehUtil = dow !== 0 && (sabado || dow !== 6);
+      if (ehUtil) contagem++;
+      if (contagem < diasNecessarios) d.setDate(d.getDate()+1);
+      tentativas++;
+    }
+    dataFim = new Date(d);
+    conclusao = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    diasUteis = diasNecessarios;
+  }
+
+  // Custos
+  const custoPessoaDia   = diaria + combustivel;
+  const custoEquipeDia   = custoPessoaDia * pessoas;
+  const custoEquipeTotal = custoEquipeDia * diasNecessarios;
+  const custoTotal       = custoEquipeTotal + supervisor + outros;
+  const faturamento      = totalLojas * valorLoja;
+  const margemBruta      = faturamento - custoTotal;
+  const margemPct        = faturamento > 0 ? (margemBruta/faturamento*100) : 0;
+
+  // Atualizar campos readonly
+  document.getElementById('p-lojasDia').value = lojasPessoaDia;
+  document.getElementById('p-diasNec').value  = diasNecessarios;
+  document.getElementById('c-faturamento').value = faturamento.toFixed(2);
+  document.getElementById('c-custoTotal').value  = custoTotal.toFixed(2);
+  const mi = document.getElementById('c-margem');
+  mi.value = margemBruta.toFixed(2);
+  mi.className = margemBruta >= 0 ? 'field input' : 'field input danger';
+
+  // Hero pills
+  document.getElementById('h-lojas').textContent      = fmtN(totalLojas);
+  document.getElementById('h-pessoas').textContent    = pessoas;
+  document.getElementById('h-dias').textContent       = diasNecessarios || '—';
+  document.getElementById('h-faturamento').textContent = faturamento >= 1000
+    ? 'R$ ' + (faturamento/1000).toFixed(0) + 'k'
+    : fmt(faturamento).replace('R$ ','R$');
+  document.getElementById('h-margem').textContent = margemPct.toFixed(1) + '%';
+
+  // Resultado
+  document.getElementById('r-lojas').textContent      = fmtN(totalLojas);
+  document.getElementById('r-pessoas').textContent    = pessoas;
+  document.getElementById('r-diasUtil').textContent   = diasNecessarios || '—';
+  document.getElementById('r-conclusao').textContent  = conclusao;
+  document.getElementById('r-lojasDia').textContent   = lojasPessoaDia;
+  document.getElementById('r-totalDia').textContent   = lojasDiaTotais;
+  document.getElementById('r-faturamento').textContent = fmt(faturamento);
+  document.getElementById('r-margem').textContent = fmt(margemBruta) + ' (' + margemPct.toFixed(1) + '%)';
+
+  // Alertas
+  const alertaDias = document.getElementById('alertaDias');
+  document.getElementById('alertaDiasN').textContent = diasNecessarios;
+  alertaDias.classList.toggle('show', diasNecessarios > 5);
+  document.getElementById('alertaMargem').classList.toggle('show', margemBruta < 0);
+
+  // Cronograma
+  renderCrono(inicioStr, diasNecessarios, lojasDiaTotais, totalLojas, sabado);
+
+  // Tabela de custos
+  renderCost({
+    pessoas, diasNecessarios, diaria, combustivel,
+    custoPessoaDia, custoEquipeDia, custoEquipeTotal,
+    supervisor, outros, custoTotal, faturamento, margemBruta, margemPct
+  });
+}
+
+function renderCrono(inicioStr, dias, lojasDia, totalLojas, sabado) {
+  const crono = document.getElementById('crono');
+  crono.innerHTML = '';
+  if (!inicioStr || dias === 0) return;
+
+  const maxDias = Math.min(dias, 14); // mostrar até 14 dias
+  let d = new Date(inicioStr + 'T00:00:00');
+  let lojasRestantes = totalLojas;
+  let contUtil = 0;
+
+  for (let i = 0; i < maxDias * 2 && contUtil < maxDias; i++) {
+    const dow = d.getDay();
+    const ehUtil = dow !== 0 && (sabado || dow !== 6);
+    if (ehUtil) {
+      const lojasHoje = Math.min(lojasDia, lojasRestantes);
+      lojasRestantes -= lojasHoje;
+      contUtil++;
+
+      const div = document.createElement('div');
+      div.className = 'crono-day' + (lojasRestantes <= 0 && contUtil === maxDias ? ' done' : '');
+      div.innerHTML = `
+        <div class="crono-day-num">Dia ${contUtil}</div>
+        <div class="crono-day-val">${lojasHoje}</div>
+        <div class="crono-day-label">${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</div>
+      `;
+      crono.appendChild(div);
+    }
+    d.setDate(d.getDate() + 1);
+  }
+
+  if (dias > 14) {
+    const div = document.createElement('div');
+    div.className = 'crono-day';
+    div.innerHTML = `<div class="crono-day-num">+${dias-14} dias</div><div class="crono-day-val">...</div><div class="crono-day-label">restantes</div>`;
+    crono.appendChild(div);
+  }
+}
+
+function renderCost(d) {
+  const tbody = document.getElementById('costBody');
+  const row = (label, qtd, unit, total, cls='') => `
+    <tr class="${cls}">
+      <td>${label}</td>
+      <td style="font-family:'DM Mono',monospace">${qtd}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${unit}</td>
+      <td>${fmt(total)}</td>
+    </tr>`;
+
+  tbody.innerHTML =
+    row('Diária por pessoa', `${d.pessoas} pess. × ${d.diasNecessarios} dias`, fmt(d.diaria), d.diaria*d.pessoas*d.diasNecessarios, 'subtotal') +
+    row('Ajuda de custo / combustível', `${d.pessoas} pess. × ${d.diasNecessarios} dias`, fmt(d.combustivel), d.combustivel*d.pessoas*d.diasNecessarios, 'subtotal') +
+    row('Custo equipe total', `${d.pessoas} pessoas`, fmt(d.custoEquipeDia) + '/dia', d.custoEquipeTotal) +
+    row('Supervisor', '1', fmt(d.supervisor), d.supervisor) +
+    row('Material de suporte / outros', '—', '—', d.outros) +
+    `<tr class="total"><td colspan="3">CUSTO TOTAL DA OPERAÇÃO</td><td>${fmt(d.custoTotal)}</td></tr>` +
+    `<tr><td colspan="3" style="color:var(--green);font-weight:700">FATURAMENTO TOTAL</td><td style="color:var(--green)">${fmt(d.faturamento)}</td></tr>` +
+    `<tr class="total"><td colspan="3" style="color:${d.margemBruta>=0?'var(--navy)':'var(--red)'}">MARGEM BRUTA (${d.margemPct.toFixed(1)}%)</td><td style="color:${d.margemBruta>=0?'var(--green)':'var(--red)'}">${fmt(d.margemBruta)}</td></tr>`;
+}
+
+// Init
+const amanha = new Date();
+amanha.setDate(amanha.getDate()+1);
+document.getElementById('p-inicio').value = amanha.toISOString().split('T')[0];
+redesPadrao.forEach(r => addRede(r.nome, r.lojas));
+calc();
+</script>
+</body>
+</html>
